@@ -13,21 +13,6 @@
 
 int main(int argc, char** argv)
 {
-	cudaError_t err = cudaSuccess;
-
-	// Get the max Thread per one block of current device
-	int max_thread = 0;
-	err = cudaDeviceGetAttribute(&max_thread, cudaDevAttrMaxThreadsPerBlock, 0);
-	if (err != cudaSuccess)
-	{
-		fprintf(stderr, "Failed to get device attribute from CUDA (error code %s)!\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	// Debug message: shows the max Thread per one block of current device
-#ifdef _DEBUG
-	printf("cudaDevAttrMaxThreadsPerBlock = %d\n\n", max_thread);
-#endif
 
 	// get the number of the inputs
 	unsigned __int64 count;
@@ -36,8 +21,8 @@ int main(int argc, char** argv)
 
 	// allocate and check required memory from main memory for inputs
 	size_t size = count * sizeof(double);
-	double* h_input = (double*)malloc(size);
-	if (h_input == NULL)
+	double* input = (double*)malloc(size);
+	if (input == NULL)
 	{
 		fprintf(stderr, "Failed to allocate host memory!\n");
 		exit(EXIT_FAILURE);
@@ -49,29 +34,17 @@ int main(int argc, char** argv)
 	// get input
 	printf("Inputs: ");
 	for(int c0 = 0; c0<count; c0++)
-		scanf("%lf", h_input+c0);
+		scanf("%lf", input+c0);
 
-	// allocate required memory from device
-	double* d_input = NULL;
-	err = cudaMalloc((void**)&d_input, size);
-	if(err != cudaSuccess)
-	{
-		fprintf(stderr, "Failed to allocate device memory (error code %s)!\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-#ifdef _DEBUG
-	printf("\ncudaMalloc OK!\n");
-#endif
+	// get sorting rate (1.0 for 100% device, 0 for 100% host)
+	double rate = 0.0;
+	printf("Rate: ");
+	scanf("%lf", &rate);
+	COORPmergesort(input, count, rate);
+	
+	// output the result
+	for (int c0 = 0; c0 < count; c0++)
+		printf("%.2lf\n", *(input + c0));
 
-	// copy the inputs from host to device
-	err = cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
-	if(err != cudaSuccess)
-	{
-		fprintf(stderr, "Failed to copy memory from host to device (error code %s)!\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-#ifdef _DEBUG
-	printf("cudaMemcpy OK!\n");
-#endif
 	return 0;
 }

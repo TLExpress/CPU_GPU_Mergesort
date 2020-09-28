@@ -4,3 +4,4 @@ template_cpu.cpp
 template.cu
 .vs/
 x64/
+.gitattributes
