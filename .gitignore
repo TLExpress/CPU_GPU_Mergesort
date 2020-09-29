@@ -1,4 +1,3 @@
-common/
 doc/
 template_cpu.cpp
 template.cu
