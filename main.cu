@@ -43,8 +43,11 @@ int main(int argc, char** argv)
 	COORPmergesort(input, count, rate);
 	
 	// output the result
+	printf("\nOutputs:\n");
 	for (int c0 = 0; c0 < count; c0++)
 		printf("%.2lf\n", *(input + c0));
-
+	
+	//release the memory of inputs
+	free(input);
 	return 0;
 }
