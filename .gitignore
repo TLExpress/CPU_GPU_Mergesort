@@ -4,3 +4,4 @@ template.cu
 .vs/
 x64/
 .gitattributes
+bin/
