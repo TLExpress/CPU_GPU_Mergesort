@@ -9,21 +9,22 @@
 
 __global__ void CUDAmergesort(double* in, unsigned __int64 count)
 {
-	unsigned __int64 tID2 = thread_ID * 2;
+	unsigned __int64 tID2 = thread_ID * 2; // tID2 means the initial point of the input data of each thread
 	if (*(in + tID2) > * (in + tID2 + 1) && tID2 + 1 < count)
 		CUDAswap(in + tID2);
-	g.sync();
+	__syncthreads();
+
+	// Merge operation
 	unsigned __int64 scale;
 	for (scale = 2; scale < count; scale = scale * 2)
 	{
 		if (thread_ID % scale == 0 && tID2 + scale < count)
 		{
 			CUDAcombine(in + (unsigned __int64)tID2, scale, in + (unsigned __int64)tID2 + scale, scale < (count - (unsigned __int64)tID2 - scale) ? scale : (count - (unsigned __int64)tID2 - scale));
-			g.sync();
 		}
-		g.sync();
+		__syncthreads();
 	}
-	g.sync();
+	__syncthreads();
 	return;
 }
 
