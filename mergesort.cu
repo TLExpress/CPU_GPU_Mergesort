@@ -8,13 +8,12 @@ __global__ void CUDAmergesort(double* in, unsigned __int64 count)
 	if (*(in + thread_ID * 2) > * (in + thread_ID * 2 + 1) || thread_ID * 2 + 1 < count)
 		CUDAswap(in + thread_ID * 2);
 	unsigned __int64 scale;
-	for (scale = 2; scale <= count;scale=scale*2)
-	{
-		if (thread_ID * scale 2 < count)
-		{
-			CUDAcombine(scale,scale<)
-		}
-	}
+	for (scale = 2; scale <= count; scale = scale * 2)
+		if (thread_ID % scale == 0)
+			CUDAcombine(in + thread_ID * 2, scale, in + thread_ID * 2 + scale, (thread_ID + 1) * 2 < count ? (thread_ID + 1) * 2 : count);
+		// DISCARDED CODES
+		//if (thread_ID * scale * 2 < count)
+			//CUDAcombine(in + thread_ID * scale * 2, scale, in + thread_ID * scale * 2 + scale, (thread_ID + 1) * scale * 2 < count ? (thread_ID + 1) * scale * 2 : count);
 	return;
 }
 
@@ -26,9 +25,34 @@ __device__ void CUDAswap(double* in)
 	return;
 }
 
-__device__ void CUDAcombine(double* in1, unsigned __int64 c1, double* in2, unsigned __int64 c2)
+__device__ void CUDAcombine(double* in1, unsigned __int64 cin1, double* in2, unsigned __int64 cin2)
 {
-
+	unsigned __int64 ctmp = cin1 + cin2;
+	size_t size = (cin1 + cin2) * sizeof(double);
+	double* tmp = (double*)malloc(size);
+	double* i1 = NULL;
+	double* i2 = NULL;
+	unsigned __int64 c1 = cin1;
+	unsigned __int64 c2 = cin2;
+	unsigned __int64 cc = 0;
+	for (i1 = in1, i2 = in2; c1 != 0 || c2 != 0; cc++)
+	{
+		if ((*i1 < *i2 && c1 != 0) || c2 == 0)
+		{
+			*(tmp + cc) = *i1;
+			i1++;
+			c1--;
+		}
+		else
+		{
+			*(tmp + cc) = *i2;
+			i2++;
+			c2--;
+		}
+	}
+	for (cc = 0; cc < ctmp; cc++)
+		*(in1 + cc) = *(tmp + cc);
+	free(tmp);
 	return;
 }
 

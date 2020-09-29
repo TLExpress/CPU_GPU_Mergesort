@@ -15,7 +15,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1FCEA725-FCE3-42FF-A447-540A7219190D}</ProjectGuid>
-    <RootNamespace>template_vs2019</RootNamespace>
+    <RootNamespace>CPU_GPU_Mergesort</RootNamespace>
     <ProjectName>CPU_GPU_Mergesort</ProjectName>
     <CudaToolkitCustomDir />
   </PropertyGroup>
