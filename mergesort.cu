@@ -24,7 +24,7 @@ __global__ void CUDAmergesort(double* in, unsigned __int64 count)
 		}
 		__syncthreads();
 	}
-	__syncthreads();
+	__syncthreads();//
 	return;
 }
 
