@@ -1,7 +1,8 @@
 // System include
+#include <stdlib.h> // For fflush and rand
+#include <stdint.h> // For uint64_t
 #include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <time.h> // For srand()
 
 // For the CUDA runtime routines
 #include <cuda_runtime.h>
@@ -15,9 +16,10 @@ int main(int argc, char** argv)
 {
 
 	// get the number of the inputs
-	unsigned __int64 count;
-	printf("Input number: ");
+	uint64_t count;
+	printf("Input number:\n");
 	scanf("%llu", &count);
+	fflush(stdin);
 
 	// allocate and check required memory from main memory for inputs
 	size_t size = count * sizeof(double);
@@ -28,18 +30,24 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 #ifdef _DEBUG
-	printf("\nMalloc OK!\n\n");
+	fprintf(stderr,"\nMalloc OK!\n");
 #endif
 
 	// get input
-	printf("Inputs: ");
-	for(int c0 = 0; c0<count; c0++)
-		scanf("%lf", input+c0);
+	printf("Inputs:\n");
+	for (int c0 = 0; c0 < count; c0++)
+	{
+		scanf("%lf", input + c0);
+		fflush(stdin);
+	}
 
 	// get sorting rate (1.0 for 100% device, 0 for 100% host)
 	double rate = 0.0;
-	printf("Rate: ");
+	printf("Rate:\n");
 	scanf("%lf", &rate);
+	fflush(stdin);
+
+	// Do mergesort
 	COORPmergesort(input, count, rate);
 	
 	// output the result

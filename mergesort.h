@@ -3,9 +3,11 @@
 #define _MERGESORT_H
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
+#include <stdint.h> // for uint64_t and uint32_t
 
 // Device function, will access on GPU
-__global__ void CUDAmergesort(double* in, unsigned __int64 count);
+__global__ void CUDAsort(double* in, unsigned __int64 count);
+__global__ void CUDAmerge(double* in, unsigned __int64 count, uint64_t scale);
 __device__ void CUDAcombine(double* in1, unsigned __int64 cin1, double* in2, unsigned __int64 cin2);
 __device__ void CUDAswap(double* in);
 

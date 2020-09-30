@@ -1,31 +1,35 @@
-#include "mergesort.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <cooperative_groups.h>
 
-#define thread_ID  (blockDim.x * blockIdx.x + threadIdx.x)
-// DISCARDED CODES
-//((blockIdx.z*gridDim.x*gridDim.y+blockIdx.y*gridDim.x+blockIdx.x)*blockDim.x*blockDim.y*blockDim.z+threadIdx.z*blockDim.x*blockDim.y+threadIdx.y*blockDim.x+threadIdx.x)
+#include "mergesort.h"
 
-__global__ void CUDAmergesort(double* in, unsigned __int64 count)
+#define MIN( x, y ) ( ((x)<(y)) ? (x):(y) )
+
+__global__ void CUDAsort(double* in, uint64_t count)
 {
-	unsigned __int64 tID2 = thread_ID * 2; // tID2 means the initial point of the input data of each thread
+	uint64_t thread_ID = blockDim.x * ( blockDim.y * ( blockDim.z * ( gridDim.x * (gridDim.y * (blockIdx.z)
+		+ blockIdx.y ) + blockIdx.x ) + threadIdx.z ) + threadIdx.y ) + threadIdx.x;
+
+	// tID2 means the initial access point of the input data of each threads
+	uint64_t tID2 = thread_ID * 2;
+
+	// Quick swap method while scale = 1
 	if (*(in + tID2) > * (in + tID2 + 1) && tID2 + 1 < count)
 		CUDAswap(in + tID2);
-	__syncthreads();
+
+	return;
+}
+
+__global__ void CUDAmerge(double* in, uint64_t count, uint64_t scale)
+{
+	uint64_t thread_ID = blockDim.x * (blockDim.y * (blockDim.z * (gridDim.x * (gridDim.y * (blockIdx.z)
+		+ blockIdx.y) + blockIdx.x) + threadIdx.z) + threadIdx.y) + threadIdx.x;
+
+	// tID2 means the initial access point of the input data of each threads
+	uint64_t tID2 = thread_ID * 2;
 
 	// Merge operation
-	unsigned __int64 scale;
-	for (scale = 2; scale < count; scale = scale * 2)
-	{
-		if (thread_ID % scale == 0 && tID2 + scale < count)
-		{
-			CUDAcombine(in + (unsigned __int64)tID2, scale, in + (unsigned __int64)tID2 + scale, scale < (count - (unsigned __int64)tID2 - scale) ? scale : (count - (unsigned __int64)tID2 - scale));
-		}
-		__syncthreads();
-	}
-	__syncthreads();//
-	return;
+	if (thread_ID % scale == 0 && tID2 + scale < count)
+		CUDAcombine(in + tID2, scale, in + tID2 + scale, MIN(scale, count - tID2 - scale));
 }
 
 __device__ void CUDAswap(double* in)
@@ -36,16 +40,16 @@ __device__ void CUDAswap(double* in)
 	return;
 }
 
-__device__ void CUDAcombine(double* in1, unsigned __int64 cin1, double* in2, unsigned __int64 cin2)
+__device__ void CUDAcombine(double* in1, uint64_t cin1, double* in2, uint64_t cin2)
 {
-	unsigned __int64 ctmp = cin1 + cin2;
+	uint64_t ctmp = cin1 + cin2;
 	size_t size = (cin1 + cin2) * sizeof(double);
 	double* tmp = (double*)malloc(size);
 	double* i1 = NULL;
 	double* i2 = NULL;
-	unsigned __int64 c1 = cin1;
-	unsigned __int64 c2 = cin2;
-	unsigned __int64 cc = 0;
+	uint64_t c1 = cin1;
+	uint64_t c2 = cin2;
+	uint64_t cc = 0;
 	for (i1 = in1, i2 = in2; c1 != 0 || c2 != 0; cc++)
 	{
 		if ((*i1 < *i2 && c1 != 0) || c2 == 0)
@@ -67,7 +71,7 @@ __device__ void CUDAcombine(double* in1, unsigned __int64 cin1, double* in2, uns
 	return;
 }
 
-__host__ void CPUmergesort(double* in, unsigned __int64 count)
+__host__ void CPUmergesort(double* in, uint64_t count)
 {
 	if (count == 1)
 		return;
@@ -78,7 +82,7 @@ __host__ void CPUmergesort(double* in, unsigned __int64 count)
 		return;
 	}
 	double* out1, * out2;
-	unsigned __int64 cout1, cout2;
+	uint64_t cout1, cout2;
 	CPUsplit(in, count, &out1, &cout1, &out2, &cout2);
 	CPUmergesort(out1, cout1);
 	CPUmergesort(out2, cout2);
@@ -94,7 +98,7 @@ __host__ void CPUswap(double* in)
 	return;
 }
 
-__host__ void CPUsplit(double* input, unsigned __int64 cin, double** out1, unsigned __int64* cout1, double** out2, unsigned __int64* cout2)
+__host__ void CPUsplit(double* input, uint64_t cin, double** out1, uint64_t* cout1, double** out2, uint64_t* cout2)
 {
 	*cout1 = cin / 2;
 	*cout2 = cin - *cout1;
@@ -103,16 +107,16 @@ __host__ void CPUsplit(double* input, unsigned __int64 cin, double** out1, unsig
 	return;
 }
 
-__host__ void CPUcombine(double* in1, unsigned __int64 cin1, double* in2, unsigned __int64 cin2)
+__host__ void CPUcombine(double* in1, uint64_t cin1, double* in2, uint64_t cin2)
 {
-	unsigned __int64 ctmp = cin1 + cin2;
+	uint64_t ctmp = cin1 + cin2;
 	size_t size = (cin1 + cin2) * sizeof(double);
 	double* tmp = (double*)malloc(size);
 	double* i1 = NULL;
 	double* i2 = NULL;
-	unsigned __int64 c1 = cin1;
-	unsigned __int64 c2 = cin2;
-	unsigned __int64 cc = 0;
+	uint64_t c1 = cin1;
+	uint64_t c2 = cin2;
+	uint64_t cc = 0;
 	for (i1 = in1, i2 = in2; c1 != 0 || c2 != 0; cc++)
 	{
 		if ((*i1 < *i2 && c1 != 0) || c2 == 0)
@@ -134,10 +138,17 @@ __host__ void CPUcombine(double* in1, unsigned __int64 cin1, double* in2, unsign
 	return;
 }
 
-__host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
+__host__ void COORPmergesort(double* in, uint64_t count, double rate)
 {
+	// 100% CPU Method, without memory exchange between host and device
+	if (rate <= 0.0)
+	{
+		CPUmergesort(in, count);
+		return;
+	}
+
 	// 100% GPU Method, all the operation will be done in device
-	if (rate == 1.0)
+	if (rate >= 1.0)
 	{
 		cudaError_t err = cudaSuccess;
 		size_t size = count * sizeof(double);
@@ -151,7 +162,7 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 			exit(EXIT_FAILURE);
 		}
 #ifdef _DEBUG
-		printf("\ncudaMalloc OK!\n");
+		fprintf(stderr, "cudaMalloc OK!\n");
 #endif
 
 		// copy the inputs from host to device
@@ -162,7 +173,7 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 			exit(EXIT_FAILURE);
 		}
 #ifdef _DEBUG
-		printf("cudaMemcpy OK!\n");
+		fprintf(stderr, "cudaMemcpy OK!\n");
 #endif
 
 		int max_block = 0;
@@ -182,12 +193,52 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 			exit(EXIT_FAILURE);
 		}
 #ifdef _DEBUG
-		printf("cudaDeviceGetAttribute OK!\n");
+		fprintf(stderr, "cudaDeviceGetAttribute OK!\n");
 #endif
 
-		// Do CUDAmergesort
-		CUDAmergesort <<< 1 + count / 2 / max_thread, count / 2 / (1 + count / max_thread)+ (count%2) >>> (d_in, count);
-		cudaDeviceSynchronize();
+		// Create CUDA operation structure
+		uint64_t needed_thread = (count / 2) + (count % 2);
+		dim3 g((uint32_t)needed_thread / max_thread + !(!((uint32_t)needed_thread % max_thread)));
+		dim3 b((uint32_t)needed_thread / g.x + !(!((uint32_t)needed_thread % g.x)));
+		if (false)// (g.x > max_block)
+		{
+			fprintf(stderr, "Invalid grid size request! (max_block = %d, gridDim.x = %d)\n", max_block,g.x);
+			exit(EXIT_FAILURE);
+		}
+#ifdef _DEBUG
+		fprintf(stderr, "Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks,\n%llu threads.\n",count,g.z,g.y,g.x,b.z,b.y,b.x,(uint64_t)g.z*g.y*g.x*b.z*b.y*b.x);
+#endif
+
+		//Do CUDA mergesort
+		CUDAsort <<< g, b >>> (d_in, count);
+
+		// host should idle until all the device work has done
+		err = cudaDeviceSynchronize();
+		if (err != cudaSuccess)
+		{
+			fprintf(stderr, "Failed to synchronize CUDA device (error code %s)!\n", cudaGetErrorString(err));
+			exit(EXIT_FAILURE);
+		}
+#ifdef _DEBUG
+		fprintf(stderr, "cudaDeviceSynchronize OK!\n");
+#endif
+
+		for (uint64_t scale = 2; scale < count; scale = scale * 2)
+		{
+			CUDAmerge << < g, b >> > (d_in, count, scale);
+
+			// host should idle until all the device work has done
+			err = cudaDeviceSynchronize();
+			if (err != cudaSuccess)
+			{
+				fprintf(stderr, "Failed to synchronize CUDA device (error code %s)!\n", cudaGetErrorString(err));
+				exit(EXIT_FAILURE);
+			}
+		}
+
+#ifdef _DEBUG
+		fprintf(stderr, "cudaDeviceSynchronize OK!\n");
+#endif
 
 		// Copy the inputs from device back to host
 		err = cudaMemcpy(in, d_in, size, cudaMemcpyDeviceToHost);
@@ -197,7 +248,7 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 			exit(EXIT_FAILURE);
 		}
 #ifdef _DEBUG
-		printf("cudaMemcpy OK!\n");
+		fprintf(stderr, "cudaMemcpy OK!\n");
 #endif
 
 		// Release CUDA memory
@@ -208,24 +259,17 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 			exit(EXIT_FAILURE);
 		}
 #ifdef _DEBUG
-		printf("cudaFree OK!\n");
+		fprintf(stderr, "cudaFree OK!\n");
 #endif
 
-		return;
-	}
-
-	// 100% CPU Method, without memory exchange between host and device
-	else if (rate == 0.0)
-	{
-		CPUmergesort(in, count);
 		return;
 	}
 
 	// Coorperative method, the lest combine will be done in host
 	cudaError_t err = cudaSuccess;
 
-	unsigned __int64 count_d ,count_h;
-	count_d = (double)count * rate;
+	uint64_t count_d ,count_h;
+	count_d = (uint64_t)((double)count * rate);
 	count_h = count - count_d;
 
 	size_t size_d = count_d * sizeof(double);
@@ -238,7 +282,7 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 		exit(EXIT_FAILURE);
 	}
 #ifdef _DEBUG
-	printf("\ncudaMalloc OK!\n");
+	fprintf(stderr, "\ncudaMalloc OK!\n");
 #endif
 
 	// Copy the inputs from host to device
@@ -249,7 +293,7 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 		exit(EXIT_FAILURE);
 	}
 #ifdef _DEBUG
-	printf("cudaMemcpy OK!\n");
+	fprintf(stderr, "cudaMemcpy OK!\n");
 #endif
 
 	int max_block = 0;
@@ -269,12 +313,52 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 		exit(EXIT_FAILURE);
 	}
 #ifdef _DEBUG
-	printf("cudaDeviceGetAttribute OK!\n");
+	fprintf(stderr, "cudaDeviceGetAttribute OK!\n");
 #endif
 
-	// Do CUDAmergesort
-	CUDAmergesort <<< 1 + count_d / 2 / max_thread, count_d / 2 / (1 + count_d / max_thread) >>> (d_in, count_d);
-	cudaDeviceSynchronize();
+	// Create CUDA operation structure
+	uint64_t needed_thread = (count_d / 2) + (count_d % 2);
+	dim3 g((uint32_t)needed_thread / max_thread + !(!((uint32_t)needed_thread % max_thread)));
+	dim3 b((uint32_t)needed_thread / g.x + !(!((uint32_t)needed_thread % g.x)));
+	if (false) //(g.x > (uint32_t)max_block)
+	{
+		fprintf(stderr, "Invalid grid size request! (max_block = %d, gridDim.x = %d)\n", max_block, g.x);
+		exit(EXIT_FAILURE);
+	}
+#ifdef _DEBUG
+	fprintf(stderr, "Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks,\n%llu threads.\n", count_d, g.z, g.y, g.x, b.z, b.y, b.x, (uint64_t)g.z * g.y * g.x * b.z * b.y * b.x);
+#endif
+
+	//Do CUDA mergesort
+	CUDAsort <<< g, b >>> (d_in, count_d);
+
+	// host should idle until all the device work has done
+	err = cudaDeviceSynchronize();
+	if (err != cudaSuccess)
+	{
+		fprintf(stderr, "Failed to synchronize CUDA device (error code %s)!\n", cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+#ifdef _DEBUG
+	fprintf(stderr, "cudaDeviceSynchronize OK!\n");
+#endif
+
+	for (uint64_t scale = 2; scale < count; scale = scale * 2)
+	{
+		CUDAmerge <<< g, b >>> (d_in, count_d, scale);
+
+		// host should idle until all the device work has done
+		err = cudaDeviceSynchronize();
+		if (err != cudaSuccess)
+		{
+			fprintf(stderr, "Failed to synchronize CUDA device (error code %s)!\n", cudaGetErrorString(err));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+#ifdef _DEBUG
+	fprintf(stderr, "cudaDeviceSynchronize OK!\n");
+#endif
 
 	// Do CPUmergesort
 	double* h_in = in + count_d;
@@ -288,7 +372,7 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 		exit(EXIT_FAILURE);
 	}
 #ifdef _DEBUG
-	printf("cudaMemcpy OK!\n");
+	fprintf(stderr, "cudaMemcpy OK!\n");
 #endif
 
 	// Release CUDA memory
@@ -299,10 +383,10 @@ __host__ void COORPmergesort(double* in, unsigned __int64 count, double rate)
 		exit(EXIT_FAILURE);
 	}
 #ifdef _DEBUG
-	printf("cudaFree OK!\n");
+	fprintf(stderr, "cudaFree OK!\n");
 #endif
 
-	//combine the result of GPU and CPU
+	//combine the result between GPU and CPU
 	CPUcombine(in, count_d, h_in, count_h);
 
 	return;
