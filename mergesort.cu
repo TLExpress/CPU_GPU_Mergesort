@@ -150,7 +150,7 @@ __host__ void COORPmergesort(double* in, uint64_t count, double rate)
 	if (rate <= 0.0)
 	{
 		CPUmergesort(in, count);
-		fprintf(stderr, "[%lf sec] CPU done!\n", timeStr(t1, ts));
+		fprintf(stderr, "[%lf sec] CPU done! Mergesort done!\n", timeStr(t1, ts));
 		return;
 	}
 
@@ -208,7 +208,7 @@ __host__ void COORPmergesort(double* in, uint64_t count, double rate)
 		dim3 g((uint32_t)needed_thread / max_thread + !(!((uint32_t)needed_thread % max_thread)));
 		dim3 b((uint32_t)needed_thread / g.x + !(!((uint32_t)needed_thread % g.x)));
 #ifdef _DEBUG
-		fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks,\n%llu threads.\n", timeStr(t1, ts),count,g.z,g.y,g.x,b.z,b.y,b.x,(uint64_t)g.z*g.y*g.x*b.z*b.y*b.x);
+		fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks, %llu threads.\n", timeStr(t1, ts),count,g.z,g.y,g.x,b.z,b.y,b.x,(uint64_t)g.z*g.y*g.x*b.z*b.y*b.x);
 #endif
 
 		//Do CUDA mergesort
@@ -222,7 +222,7 @@ __host__ void COORPmergesort(double* in, uint64_t count, double rate)
 			exit(EXIT_FAILURE);
 		}
 #ifdef _DEBUG
-		fprintf(stderr, "[%lf sec] cudaDeviceSynchronize OK!\n", timeStr(t1, ts));
+		fprintf(stderr, "[%lf sec] CUDAsort OK!\n", timeStr(t1, ts));
 #endif
 
 		for (uint64_t scale = 2; scale < count; scale = scale * 2)
@@ -239,7 +239,7 @@ __host__ void COORPmergesort(double* in, uint64_t count, double rate)
 		}
 
 #ifdef _DEBUG
-		fprintf(stderr, "[%lf sec] cudaDeviceSynchronize OK!\n", timeStr(t1, ts));
+		fprintf(stderr, "[%lf sec] CUDAmerge OK!\n", timeStr(t1, ts));
 #endif
 
 		// Copy the inputs from device back to host
@@ -263,6 +263,7 @@ __host__ void COORPmergesort(double* in, uint64_t count, double rate)
 #ifdef _DEBUG
 		fprintf(stderr, "[%lf sec] cudaFree OK!\n", timeStr(t1, ts));
 #endif
+		fprintf(stderr, "[%lf sec] GPU done! Mergesort done!\n", timeStr(t1, ts));
 
 		return;
 	}
@@ -299,6 +300,7 @@ __host__ void COORPmergesort(double* in, uint64_t count, double rate)
 
 	//combine the result between GPU and CPU
 	CPUcombine(in, count_d, h_in, count_h);
+	fprintf(stderr, "[%lf sec] Mergesort done!\n", timeStr(t1, ts));
 
 	return;
 }
@@ -363,7 +365,7 @@ void __stdcall gChild(void** parg)
 	dim3 g((uint32_t)needed_thread / max_thread + !(!((uint32_t)needed_thread % max_thread)));
 	dim3 b((uint32_t)needed_thread / g.x + !(!((uint32_t)needed_thread % g.x)));
 #ifdef _DEBUG
-	fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks,\n%llu threads.\n", timeStr(t1, ts), count_d, g.z, g.y, g.x, b.z, b.y, b.x, (uint64_t)g.z * g.y * g.x * b.z * b.y * b.x);
+	fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks, %llu threads.\n", timeStr(t1, ts), count_d, g.z, g.y, g.x, b.z, b.y, b.x, (uint64_t)g.z * g.y * g.x * b.z * b.y * b.x);
 #endif
 
 	//Do CUDA mergesort
@@ -377,7 +379,7 @@ void __stdcall gChild(void** parg)
 		exit(EXIT_FAILURE);
 	}
 #ifdef _DEBUG
-	fprintf(stderr, "[%lf sec] cudaDeviceSynchronize OK!\n", timeStr(t1, ts));
+	fprintf(stderr, "[%lf sec] CUDAsort OK!\n", timeStr(t1, ts));
 #endif
 
 	for (uint64_t scale = 2; scale < count_d; scale = scale * 2)
@@ -394,7 +396,7 @@ void __stdcall gChild(void** parg)
 	}
 
 #ifdef _DEBUG
-	fprintf(stderr, "[%lf sec] cudaDeviceSynchronize OK!\n", timeStr(t1, ts));
+	fprintf(stderr, "[%lf sec] CUDAmerge OK!\n", timeStr(t1, ts));
 #endif
 	// Copy the inputs from device back to host
 	err = cudaMemcpy(in, d_in, size_d, cudaMemcpyDeviceToHost);
