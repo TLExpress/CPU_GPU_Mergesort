@@ -1,7 +1,7 @@
 // System include
 #include <stdlib.h> // For fflush and rand
 #include <stdint.h> // For uint64_t
-#include <stdio.h>
+#include <stdio.h> // Standard IO library
 #include <time.h> // For srand()
 
 // For the CUDA runtime routines
@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 
 	// allocate and check required memory from main memory for inputs
 	size_t size = count * sizeof(double);
-	double* input = (double*)malloc(size);
+	double* input = (double*)malloc(size); // Alloc memory to store the unput
 	if (input == NULL)
 	{
 		fprintf(stderr, "Failed to allocate host memory!\n");
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 	printf("Inputs:\n");
 	for (int c0 = 0; c0 < count; c0++)
 	{
-		scanf("%lf", input + c0);
+		scanf("%lf", input + c0); 
 		fflush(stdin);
 	}
 

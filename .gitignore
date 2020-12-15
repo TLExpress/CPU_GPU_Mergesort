@@ -5,3 +5,4 @@ template.cu
 x64/
 .gitattributes
 bin/
+enc_temp_folder/ea2dc931e2ed19329bc4c898c324614/mergesort.cu
