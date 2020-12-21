@@ -208,7 +208,7 @@ __host__ void COORPmergesort(double* in, uint64_t count, double rate)
 		dim3 g((uint32_t)needed_thread / max_thread + !(!((uint32_t)needed_thread % max_thread)));
 		dim3 b((uint32_t)needed_thread / g.x + !(!((uint32_t)needed_thread % g.x)));
 #ifdef _DEBUG
-		fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks, %llu threads.\n", timeStr(t1, ts),count,g.z,g.y,g.x,b.z,b.y,b.x,(uint64_t)g.z*g.y*g.x*b.z*b.y*b.x);
+		fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d grid and %d blocks, %llu threads.\n", timeStr(t1, ts), count, g.x, b.x, (uint64_t)g.z * g.y * g.x * b.z * b.y * b.x);
 #endif
 
 		//Do CUDA mergesort
@@ -365,7 +365,7 @@ void __stdcall gChild(void** parg)
 	dim3 g((uint32_t)needed_thread / max_thread + !(!((uint32_t)needed_thread % max_thread)));
 	dim3 b((uint32_t)needed_thread / g.x + !(!((uint32_t)needed_thread % g.x)));
 #ifdef _DEBUG
-	fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d x %d x %d grid and %d x %d x %d blocks, %llu threads.\n", timeStr(t1, ts), count_d, g.z, g.y, g.x, b.z, b.y, b.x, (uint64_t)g.z * g.y * g.x * b.z * b.y * b.x);
+	fprintf(stderr, "[%lf sec] Sorting %llu numbers with a %d grid and %d blocks, %llu threads.\n", timeStr(t1, ts), count_d, g.x, b.x, (uint64_t)g.z * g.y * g.x * b.z * b.y * b.x);
 #endif
 
 	//Do CUDA mergesort
